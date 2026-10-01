@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GATE Tracker">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>GATE Daily Tracker</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#172033;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:760px;margin:auto;padding:16px 14px 40px}.hero{background:#111827;color:#fff;border-radius:20px;padding:20px;margin-bottom:14px}
+h1{margin:0 0 5px;font-size:26px}.muted{color:#94a3b8;font-size:13px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.date{font-size:18px;font-weight:700;margin-top:12px}
+select,button{min-height:44px;border-radius:10px;border:1px solid #d7dde5;padding:9px 12px;background:#fff;font:inherit}button{cursor:pointer;font-weight:650}
+.nav{display:flex;gap:7px}.nav button{background:#fff}.primary{background:#111827;color:#fff;border-color:#111827}
+.progress{height:11px;background:#334155;border-radius:99px;overflow:hidden;margin-top:15px}.fill{height:100%;width:0;background:#fff;transition:.2s}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.stat{background:rgba(255,255,255,.08);padding:10px;border-radius:12px;text-align:center}.stat b{display:block;font-size:20px}.stat span{font-size:11px;color:#cbd5e1}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:15px;margin:12px 0}.section-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.section-head h2{font-size:17px;margin:0}.time{font-size:12px;color:#64748b;margin-top:3px}
+.task{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid #eef2f7;cursor:pointer}.task:last-child{border-bottom:0}.task input{width:21px;height:21px;accent-color:#111827}.task.done span{text-decoration:line-through;color:#94a3b8}
+.week{display:flex;gap:6px;overflow-x:auto;padding:2px 0 5px}.day{min-width:55px;text-align:center;padding:8px 4px;border:1px solid #dbe2ea;border-radius:10px;background:#fff}.day small{display:block;color:#64748b}.day.active{background:#111827;color:#fff}.day.complete{outline:2px solid #94a3b8}
+.note{width:100%;min-height:80px;border:1px solid #d7dde5;border-radius:10px;padding:10px;font:inherit;resize:vertical}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}.hint{text-align:center;color:#64748b;font-size:12px;margin-top:18px}
+@media(max-width:480px){.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:span 2}}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+<div class="row"><div><div class="muted">GATE 2027 • Oct 1 → Jan 31</div><h1>Daily GATE Tracker</h1></div><div class="nav"><button id="prev">←</button><button id="today" class="primary">Today</button><button id="next">→</button></div></div>
+<div class="date" id="dateLabel"></div>
+<div style="margin-top:9px"><select id="dateSelect" aria-label="Choose date"></select></div>
+<div class="progress"><div id="fill" class="fill"></div></div>
+<div class="stats"><div class="stat"><b id="done">0</b><span>Done</span></div><div class="stat"><b id="total">0</b><span>Tasks</span></div><div class="stat"><b id="pct">0%</b><span>Today</span></div></div>
+</section>
+<div id="week" class="week"></div>
+<div id="tasks"></div>
+<section class="card"><div class="section-head"><h2>📝 Daily note</h2><span class="time">Saved automatically</span></div><textarea id="note" class="note" placeholder="What did you learn? What should you improve tomorrow?"></textarea><div class="actions"><button id="clear" type="button">Reset this day</button></div></section>
+<div class="hint">Your checklist and notes stay on this device in your browser.</div>
+</main>
+<script>
+(function(){
+const start=new Date(Date.UTC(2026,9,1)), end=new Date(Date.UTC(2027,0,31)), days=[];
+for(let d=new Date(start);d<=end;d.setUTCDate(d.getUTCDate()+1))days.push(new Date(d));
+const pad=n=>String(n).padStart(2,'0'), key=d=>`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
+const pretty=d=>d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+const today=new Date(), todayKey=key(new Date(Date.UTC(today.getFullYear(),today.getMonth(),today.getDate())));
+let selected=days.some(d=>key(d)===todayKey)?todayKey:key(start);
+const sections=[
+["🌅 Morning GATE","5:00 AM – 8:00 AM",["Wake up + freshen up","GATE concepts — Session 1","Short break","GATE concepts + examples","Quick revision"]],
+["🍳 Morning routine","8:00 AM – 9:00 AM",["Get ready","Breakfast","Leave for college"]],
+["🎓 College free hours","9:00 AM – 4:00 PM",["Revise today's GATE topic","Solve GATE PYQs on today's topic","Mark difficult questions","Write down mistakes/doubts"]],
+["🏋️ Gym","4:00 PM – 7:00 PM",["Change + prepare","Gym","Return + freshen up"]],
+["🍽️ Dinner","7:00 PM – 7:30 PM",["Dinner","Short rest"]],
+["🎸 Guitar","7:30 PM – 8:30 PM",["Finger exercises","Chord practice","Strumming practice","Song practice"]],
+["🌙 Evening GATE","8:30 PM – 10:30 PM",["New concept / Topic 2","Short break","Practice + problem solving","Revision"]],
+["📝 Night PYQs","10:30 PM – 11:00 PM",["Solve PYQs","Check answers","Record mistakes","Add difficult questions to revision list"]]
+];
+const totalTasks=sections.reduce((a,s)=>a+s[2].length,0);
+function getState(){try{return JSON.parse(localStorage.getItem("gateTracker_"+selected)||"{}")}catch(e){return{}}}
+function setState(s){localStorage.setItem("gateTracker_"+selected,JSON.stringify(s))}
+const $=id=>document.getElementById(id);
+days.forEach(d=>{const o=document.createElement("option");o.value=key(d);o.textContent=pretty(d);$("dateSelect").appendChild(o)});
+function complete(d){try{const s=JSON.parse(localStorage.getItem("gateTracker_"+key(d))||"{}");return Object.values(s.checks||{}).filter(Boolean).length===totalTasks}catch(e){return false}}
+function render(){
+const d=days.find(x=>key(x)===selected)||start,s=getState(),checks=s.checks||{};
+$("dateLabel").textContent=pretty(d);$("dateSelect").value=selected;$("note").value=s.note||"";
+const taskRoot=$("tasks");taskRoot.innerHTML="";let i=0,done=0;
+sections.forEach(sec=>{
+const card=document.createElement("section");card.className="card";
+const head=document.createElement("div");head.className="section-head";head.innerHTML=`<div><h2>${sec[0]}</h2><div class="time">${sec[1]}</div></div>`;
+card.appendChild(head);
+sec[2].forEach(t=>{
+const label=document.createElement("label");label.className="task";const cb=document.createElement("input");cb.type="checkbox";cb.checked=!!checks[i];if(cb.checked)done++;
+const span=document.createElement("span");span.textContent=t;label.append(cb,span);label.classList.toggle("done",cb.checked);
+const idx=i++;cb.addEventListener("change",()=>{const ss=getState();ss.checks=ss.checks||{};ss.checks[idx]=cb.checked;setState(ss);render()});card.appendChild(label)
+});taskRoot.appendChild(card)
+});
+const pct=Math.round(done/totalTasks*100);$("done").textContent=done;$("total").textContent=totalTasks;$("pct").textContent=pct+"%";$("fill").style.width=pct+"%";renderWeek(d)
+}
+function renderWeek(d){const w=$("week");w.innerHTML="";const idx=days.findIndex(x=>key(x)===key(d)),startIdx=Math.max(0,idx-d.getUTCDay()),endIdx=Math.min(days.length-1,startIdx+6);for(let i=startIdx;i<=endIdx;i++){const x=days[i],b=document.createElement("button");b.type="button";b.className="day"+(key(x)===selected?" active":"")+(complete(x)?" complete":"");b.innerHTML=`${x.toLocaleDateString("en",{weekday:"short",timeZone:"UTC"})}<small>${x.getUTCDate()}</small>`;b.onclick=()=>{selected=key(x);render()};w.appendChild(b)}}
+function move(n){let i=days.findIndex(x=>key(x)===selected);selected=key(days[Math.max(0,Math.min(days.length-1,i+n))]);render()}
+$("prev").onclick=()=>move(-1);$("next").onclick=()=>move(1);$("today").onclick=()=>{selected=days.some(d=>key(d)===todayKey)?todayKey:key(start);render()};$("dateSelect").onchange=e=>{selected=e.target.value;render()};
+$("note").addEventListener("input",()=>{const s=getState();s.note=$("note").value;setState(s)});
+$("clear").onclick=()=>{if(confirm("Reset all tasks and notes for "+pretty(days.find(d=>key(d)===selected))+"?")){localStorage.removeItem("gateTracker_"+selected);render()}};
+render();
+})();
+</script>
+</body>
+</html>
